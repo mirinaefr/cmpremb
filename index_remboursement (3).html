@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>callmeparis. — 환불 계산기 / Calculateur de remboursement</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+
+<style>
+/* ══════════════════════════════════════════════
+   CHARTE callmeparis.
+   Blanc + halo lavande · dégradé indigo→magenta
+   Pretendard uniquement · pilules pastel
+   ══════════════════════════════════════════════ */
+:root{
+  --indigo:#6366F1; --indigo-deep:#4F46E5;
+  --magenta:#EC4899; --magenta-deep:#DB2777;
+  --grad:linear-gradient(135deg,#6366F1 0%,#EC4899 100%);
+  --grad-soft:linear-gradient(135deg,#EEF0FF 0%,#FDF2F8 100%);
+  --lavender:#EEF0FE; --lavender-deep:#E0E3FD; --pink:#FDF2F8;
+  --ink:#1E1B4B; --ink-soft:#3F3A6E; --muted:#7B7A97;
+  --line:#E9E7F5; --surface:#FFFFFF; --canvas:#FCFCFF;
+  --radius:18px; --radius-sm:12px; --pill:999px;
+  --shadow:0 2px 18px rgba(79,70,229,.07);
+  --shadow-lift:0 10px 34px rgba(99,102,241,.16);
+  --shadow-grad:0 12px 36px rgba(219,39,119,.20);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:var(--canvas);
+  background-image:
+    radial-gradient(900px 520px at -10% -8%, #EDEBFF 0%, rgba(255,255,255,0) 62%),
+    radial-gradient(700px 460px at 108% 4%, #FDF0F8 0%, rgba(255,255,255,0) 58%);
+  background-attachment:fixed;
+  min-height:100vh;color:var(--ink);padding:16px;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;
+}
+#app{max-width:560px;margin:0 auto;padding-bottom:48px;}
+
+/* ── Header ── */
+.header{text-align:center;padding:30px 0 20px;}
+.header-logo{
+  font-size:30px;font-weight:800;letter-spacing:-1.2px;line-height:1;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  display:inline-block;
+}
+.header-sub{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:500;letter-spacing:.2px;}
+.header-title{font-size:19px;font-weight:800;color:var(--ink);margin-top:16px;letter-spacing:-.5px;}
+.header-title small{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px;letter-spacing:-.1px;}
+
+/* ── Sections ── */
+.section{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px 22px;margin-bottom:14px;
+}
+.section-label{
+  font-size:13.5px;font-weight:800;color:var(--ink);letter-spacing:-.3px;
+  margin-bottom:16px;display:flex;align-items:center;gap:9px;
+}
+.section-label .num{
+  background:var(--grad);color:#fff;width:22px;height:22px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;flex-shrink:0;
+}
+.section-label .fr{font-weight:500;color:var(--muted);font-size:12.5px;}
+
+/* ── Cards ── */
+.cards2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.card{
+  background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  padding:15px 12px;cursor:pointer;text-align:center;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.card:hover,.card:focus-visible{border-color:var(--indigo);box-shadow:var(--shadow-lift);transform:translateY(-2px);outline:none;}
+.card.active{
+  border-color:transparent;background:var(--grad);color:#fff;box-shadow:var(--shadow-grad);
+}
+.card .ct{font-size:15px;font-weight:700;letter-spacing:-.3px;}
+.card .cd{font-size:11.5px;color:var(--muted);margin-top:4px;font-weight:500;line-height:1.4;}
+.card.active .cd{color:rgba(255,255,255,.9);}
+
+/* ── Fields ── */
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;letter-spacing:-.2px;}
+.field label small{font-weight:500;color:var(--muted);font-size:11.5px;}
+.field input,.field select{
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  font-family:inherit;font-size:15px;font-weight:500;color:var(--ink);background:var(--surface);
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(99,102,241,.13);}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5;font-weight:500;}
+.field .hint.auto{
+  color:var(--indigo-deep);background:var(--lavender);
+  padding:6px 10px;border-radius:8px;font-weight:600;
+}
+.field .hint.auto b{font-weight:800;}
+.field .hint.manual{
+  color:var(--magenta-deep);background:var(--pink);
+  padding:6px 10px;border-radius:8px;font-weight:600;
+}
+.field input::placeholder{color:#B6B4CC;font-weight:500;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.hidden{display:none;}
+
+/* ── Toggle garantie ── */
+.toggle{
+  display:flex;align-items:flex-start;gap:12px;margin-top:14px;
+  background:var(--grad-soft);border:1.5px solid var(--lavender-deep);
+  border-radius:var(--radius-sm);padding:14px 16px;cursor:pointer;
+}
+.toggle input{
+  appearance:none;-webkit-appearance:none;
+  width:22px;height:22px;border-radius:7px;border:1.5px solid var(--lavender-deep);
+  background:#fff;flex-shrink:0;cursor:pointer;position:relative;margin-top:1px;
+}
+.toggle input:checked{background:var(--grad);border-color:transparent;}
+.toggle input:checked::after{
+  content:"✓";position:absolute;inset:0;color:#fff;font-size:13px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+.toggle .tt{font-size:13.5px;font-weight:700;color:var(--ink);letter-spacing:-.2px;}
+.toggle .td{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.55;font-weight:500;}
+
+/* ── Info ── */
+.info-box{
+  background:var(--lavender);border-radius:var(--radius-sm);padding:13px 16px;
+  font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin-top:14px;font-weight:500;
+}
+.info-box b{font-weight:700;color:var(--ink);}
+
+/* ── Résultat ── */
+.price-card{
+  background:var(--grad);border-radius:var(--radius);padding:28px 24px;text-align:center;
+  color:#fff;box-shadow:var(--shadow-grad);margin-bottom:14px;
+}
+.price-card .pl{font-size:12.5px;opacity:.92;font-weight:600;letter-spacing:.2px;}
+.price-card .pv{font-size:42px;font-weight:800;letter-spacing:-1.8px;margin:10px 0 2px;line-height:1.05;}
+.price-card .pv span{font-size:20px;font-weight:600;opacity:.82;}
+.price-card .pm{font-size:12.5px;opacity:.9;font-weight:500;}
+.price-card .tag{
+  display:inline-block;background:rgba(255,255,255,.22);padding:6px 15px;
+  border-radius:var(--pill);font-size:12.5px;font-weight:700;margin-top:13px;
+}
+
+.detail{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow);
+}
+.detail-head{
+  background:var(--grad-soft);padding:15px 22px;border-bottom:1px solid var(--line);
+  font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.3px;
+  display:flex;align-items:center;gap:9px;
+}
+.detail-head .flag{font-size:17px;}
+.detail-body{padding:8px 22px 16px;}
+.drow{
+  display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+  border-bottom:1px solid var(--line);font-size:13.5px;
+}
+.drow:last-child{border-bottom:none;}
+.drow .l{color:var(--muted);flex-shrink:0;font-weight:500;}
+.drow .v{font-weight:700;color:var(--ink);text-align:right;}
+.drow.total{border-top:1.5px solid var(--lavender-deep);border-bottom:none;margin-top:5px;padding-top:13px;font-size:15.5px;}
+.drow.total .l{color:var(--ink-soft);font-weight:700;}
+.drow.total .v{
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;
+}
+.drow.minus .v{color:var(--magenta-deep);}
+.drow.plus .v{color:var(--indigo-deep);}
+.rule-tag{
+  display:inline-block;background:var(--lavender);color:var(--indigo-deep);
+  font-size:12px;font-weight:700;padding:5px 12px;border-radius:var(--pill);line-height:1.4;
+}
+.rule-tag.warn{background:var(--pink);color:var(--magenta-deep);}
+
+.placeholder{
+  background:var(--surface);border:1.5px dashed var(--lavender-deep);border-radius:var(--radius);
+  padding:36px 22px;text-align:center;color:var(--muted);font-size:14px;line-height:1.65;font-weight:500;
+}
+.placeholder span{font-size:12.5px;}
+
+/* ── Boutons ── */
+.btn{
+  width:100%;padding:16px;border:none;border-radius:var(--radius);
+  font-family:inherit;font-size:15.5px;font-weight:700;letter-spacing:-.2px;cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.btn-pdf{background:var(--grad);color:#fff;box-shadow:var(--shadow-grad);margin-bottom:9px;}
+.btn-pdf:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(219,39,119,.28);}
+.btn-pdf:disabled{opacity:.6;cursor:progress;transform:none;}
+.btn-print{background:var(--surface);color:var(--ink-soft);border:1.5px solid var(--line);font-size:14px;}
+.btn-print:hover{border-color:var(--indigo);color:var(--indigo-deep);}
+.btn:focus-visible{outline:2.5px solid var(--indigo);outline-offset:2px;}
+
+.legal{font-size:11px;color:var(--muted);line-height:1.7;margin-top:18px;padding:0 4px;font-weight:500;}
+.legal b{color:var(--ink-soft);font-weight:700;}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;font-size:13px;font-weight:600;
+  padding:13px 20px;border-radius:var(--pill);box-shadow:0 12px 34px rgba(30,27,75,.3);
+  opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
+  z-index:60;max-width:90vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media print{
+  body{background:#fff;background-image:none;}
+  .section,.btn,.header-sub{display:none;}
+  #app{max-width:100%;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="header">
+    <div class="header-logo">callmeparis.</div>
+    <div class="header-sub">전화불어 · 불어과외 · DELF·DALF 전문</div>
+    <div class="header-title">수강료 환불 계산기
+      <small>Calculateur de remboursement · 학원법 시행령 환불 기준</small>
+    </div>
+  </div>
+
+  <!-- 1. 환불 주체 -->
+  <div class="section">
+    <div class="section-label"><span class="num">1</span>환불 요청 주체 <span class="fr">/ Demandeur</span></div>
+    <div class="cards2" id="requester-cards">
+      <div class="card" data-req="student" tabindex="0">
+        <div class="ct">학습자 (변심)</div>
+        <div class="cd">L'élève ne peut plus continuer</div>
+      </div>
+      <div class="card" data-req="teacher" tabindex="0">
+        <div class="ct">교습자 (불가)</div>
+        <div class="cd">Le professeur ne peut plus assurer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 강좌 -->
+  <div class="section">
+    <div class="section-label"><span class="num">2</span>강좌 <span class="fr">/ Cours</span></div>
+    <div class="field">
+      <label>강좌 선택 <small>· sélection du cours</small></label>
+      <select id="course">
+        <option value="conversation">[전화] 프랑스어 연습 (회화 / 시사)</option>
+        <option value="delf">[전화] DELF·DALF 구술 실전</option>
+        <option value="voyage">[전화] 여행 프랑스어 특강 (60분)</option>
+        <option value="custom">직접 입력 / Personnalisé</option>
+      </select>
+      <div class="hint" id="course-hint"></div>
+    </div>
+  </div>
+
+  <!-- 3. 세부 정보 -->
+  <div class="section">
+    <div class="section-label"><span class="num">3</span>세부 정보 <span class="fr">/ Détails</span></div>
+
+    <div class="row2">
+      <div class="field">
+        <label>교습 기간 (개월) <small>· durée (mois)</small></label>
+        <input type="number" id="months" min="0" step="1" value="2">
+      </div>
+      <div class="field">
+        <label>납부 금액 (원) <small>· montant payé</small></label>
+        <input type="text" id="paid" inputmode="numeric" placeholder="예: 1,200,000">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>총 교습 횟수 <small>· séances payées</small></label>
+        <input type="number" id="total" min="0" step="1" value="16">
+      </div>
+      <div class="field" id="completed-field">
+        <label>경과 교습 횟수 <small>· séances déjà faites</small></label>
+        <input type="number" id="completed" min="0" step="1" value="0">
+      </div>
+    </div>
+
+    <div id="monthly-params" class="row2 hidden">
+      <div class="field">
+        <label>월 교습비 (원) <small>· tarif mensuel</small></label>
+        <input type="text" id="monthlyFee" inputmode="numeric" placeholder="자동 계산">
+        <div class="hint" id="hint-fee">비워두면 납부액÷개월수로 자동 계산. 첫 달 할인 시 직접 입력하세요.</div>
+      </div>
+      <div class="field">
+        <label>월 교습 횟수 <small>· séances / mois</small></label>
+        <input type="text" id="spm" inputmode="numeric" placeholder="자동 계산">
+        <div class="hint" id="hint-spm">비워두면 총 횟수÷개월수로 자동 계산.</div>
+      </div>
+    </div>
+
+    <div id="teacher-fields" class="hidden">
+      <div class="field">
+        <label>교습 시작일 <small>· date de début</small></label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>교습 종료 예정일 <small>· fin prévue</small></label>
+          <input type="date" id="endDate">
+        </div>
+        <div class="field">
+          <label>교습 불가일 <small>· date d'arrêt</small></label>
+          <input type="date" id="stopDate">
+        </div>
+      </div>
+      <div class="info-box">일할계산: <b>총 교습일수 = 시작일 ~ 종료 예정일</b>, <b>경과 일수 = 시작일 ~ 교습 불가일 전날</b> 기준.</div>
+    </div>
+
+    <!-- garantie première séance -->
+    <label class="toggle" id="guarantee-toggle">
+      <input type="checkbox" id="guarantee">
+      <span>
+        <span class="tt">첫 수업 만족 보장 적용</span>
+        <span class="td">첫 수업 후 만족하지 못하셨다면 법정 기준과 관계없이 <b>전액 환불</b>됩니다. (callmeparis. 자체 정책)</span>
+      </span>
+    </label>
+
+    <div class="row2" style="margin-top:14px">
+      <div class="field">
+        <label>학생 이름 <small>· nom (option)</small></label>
+        <input type="text" id="studentName" placeholder="선택 사항">
+      </div>
+      <div class="field">
+        <label>작성일 <small>· date</small></label>
+        <input type="date" id="docDate">
+      </div>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  var state = { requester:null, last:null };
+
+  var PRESETS = {
+    conversation:{months:2,total:16,hint:"기본값: 주 2회 × 8주 = 16회 (조정 가능)"},
+    delf:{months:2,total:16,hint:"주 2회 · 30분 · 2개월 = 16회"},
+    voyage:{months:1,total:1,hint:"60분 · 1회 · 90,000원"},
+    custom:{hint:"모든 값을 직접 입력하세요."}
+  };
+  var PRESET_PAID = {voyage:"90,000"};
+
+  var $ = function(id){return document.getElementById(id);};
+  var courseSel=$("course"), courseHint=$("course-hint");
+  var monthsI=$("months"), paidI=$("paid"), totalI=$("total"), completedI=$("completed");
+  var monthlyFeeI=$("monthlyFee"), spmI=$("spm");
+  var hintFee=$("hint-fee"), hintSpm=$("hint-spm");
+  var startI=$("startDate"), endI=$("endDate"), stopI=$("stopDate");
+  var monthlyParams=$("monthly-params"), teacherFields=$("teacher-fields"), completedField=$("completed-field");
+  var guaranteeI=$("guarantee"), guaranteeToggle=$("guarantee-toggle");
+  var resultDiv=$("result"), toastEl=$("toast");
+
+  var today=new Date(), iso=today.toISOString().slice(0,10);
+  $("docDate").value=iso;
+
+  /* ── helpers ── */
+  function digits(v){return (v+"").replace(/[^0-9]/g,"");}
+  function num(v){var d=digits(v);return d?parseInt(d,10):0;}
+  function fmt(n){return new Intl.NumberFormat("ko-KR").format(Math.round(n));}
+  function r10(n){return Math.round(n);}
+  function pct(x){return Math.round(x*1000)/10;}
+  function days(a,b){if(!a||!b)return 0;return Math.round((new Date(b)-new Date(a))/86400000);}
+  function esc(s){return (s+"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  var toastTimer=null;
+  function toast(msg){
+    toastEl.textContent=msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){toastEl.classList.remove("show");},3600);
+  }
+
+  function bindThousands(inp){
+    inp.addEventListener("input",function(){
+      var d=digits(this.value);
+      this.value=d?new Intl.NumberFormat("ko-KR").format(parseInt(d,10)):"";
+      compute();
+    });
+  }
+  bindThousands(paidI); bindThousands(monthlyFeeI); bindThousands(spmI);
+
+  document.querySelectorAll("#requester-cards .card").forEach(function(c){
+    function pick(){
+      document.querySelectorAll("#requester-cards .card").forEach(function(x){x.classList.remove("active");});
+      c.classList.add("active");
+      state.requester=c.dataset.req;
+      toggleFields(); compute();
+    }
+    c.addEventListener("click",pick);
+    c.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();pick();}});
+  });
+
+  courseSel.addEventListener("change",function(){
+    var p=PRESETS[courseSel.value];
+    courseHint.textContent=p.hint||"";
+    if(p.months!==undefined)monthsI.value=p.months;
+    if(p.total!==undefined)totalI.value=p.total;
+    if(PRESET_PAID[courseSel.value])paidI.value=PRESET_PAID[courseSel.value];
+    toggleFields(); compute();
+  });
+  courseHint.textContent=PRESETS.conversation.hint;
+
+  function toggleFields(){
+    var isTeacher=state.requester==="teacher";
+    var m=num(monthsI.value);
+    teacherFields.classList.toggle("hidden",!isTeacher);
+    completedField.classList.toggle("hidden",isTeacher);
+    monthlyParams.classList.toggle("hidden", isTeacher || m<=1);
+    guaranteeToggle.classList.toggle("hidden", isTeacher);
+  }
+
+  [monthsI,paidI,totalI,completedI,startI,endI,stopI,guaranteeI,$("studentName"),$("docDate")].forEach(function(el){
+    el.addEventListener("input",function(){toggleFields();compute();});
+    el.addEventListener("change",function(){toggleFields();compute();});
+  });
+
+  /* ── barème légal (≤ 1 mois) ── */
+  function ruleA(fee,started,progress){
+    if(started<=0)return {amount:fee,key:"start",
+      kr:"수업 시작 전 → 전액 환불", fr:"Avant le début → remboursement intégral"};
+    if(progress<1/3)return {amount:fee*2/3,key:"third",
+      kr:"총 교습시간의 1/3 경과 전 → 2/3 환불", fr:"Avant 1/3 du temps total → 2/3 remboursés"};
+    if(progress<1/2)return {amount:fee*1/2,key:"half",
+      kr:"총 교습시간의 1/2 경과 전 → 1/2 환불", fr:"Avant 1/2 du temps total → 1/2 remboursé"};
+    return {amount:0,key:"none",
+      kr:"총 교습시간의 1/2 경과 후 → 환불 없음", fr:"Après 1/2 du temps total → aucun remboursement"};
+  }
+
+  /* ── compute ── */
+  function compute(){
+    if(!state.requester){return placeholder("환불 요청 주체를 먼저 선택하세요.","Sélectionnez d'abord le demandeur.");}
+    var paid=num(paidI.value), months=num(monthsI.value);
+    if(paid<=0||months<=0){return placeholder("납부 금액과 교습 기간을 입력하세요.","Saisissez le montant payé et la durée.");}
+    if(state.requester==="teacher")return computeTeacher(paid,months);
+    return computeStudent(paid,months);
+  }
+
+  function computeStudent(paid,months){
+    var total=num(totalI.value), completed=num(completedI.value);
+    if(total<=0){return placeholder("총 교습 횟수를 입력하세요.","Saisissez le nombre de séances payées.");}
+    if(completed>total)completed=total;
+
+    /* garantie interne : prime sur le barème légal */
+    if(guaranteeI.checked){
+      var gKr=[
+        ["적용 정책","첫 수업 만족 보장 (callmeparis. 자체 정책)"],
+        ["교습 기간", months+"개월"],
+        ["총 교습 횟수 / 경과", total+"회 / "+completed+"회"],
+        ["납부 금액", fmt(paid)+"원"],
+        ["적용 기준","RULE:첫 수업 만족 보장 → 전액 환불 (법정 기준보다 유리)"]
+      ];
+      var gFr=[
+        ["Politique appliquée","Garantie satisfaction 1re séance (callmeparis.)"],
+        ["Durée du cours", months+" mois"],
+        ["Séances totales / faites", total+" / "+completed],
+        ["Montant payé", fmt(paid)+" ₩"],
+        ["Règle appliquée","RULE:Garantie 1re séance → remboursement intégral (plus favorable que le barème légal)"]
+      ];
+      return render("student", r10(paid), paid, gKr, gFr, true);
+    }
+
+    var refund, krRows=[], frRows=[];
+
+    if(months<=1){
+      var progress=completed/total;
+      var res=ruleA(paid,completed,progress);
+      refund=res.amount;
+      krRows=[
+        ["교습 기간","1개월 이내"],
+        ["총 교습 횟수 / 경과", total+"회 / "+completed+"회 ("+pct(progress)+"%)"],
+        ["납부 금액", fmt(paid)+"원"],
+        ["적용 기준", "RULE:"+res.kr]
+      ];
+      frRows=[
+        ["Durée du cours","1 mois ou moins"],
+        ["Séances totales / faites", total+" / "+completed+" ("+pct(progress)+" %)"],
+        ["Montant payé", fmt(paid)+" ₩"],
+        ["Règle appliquée","RULE:"+res.fr]
+      ];
+    } else {
+      var mf = monthlyFeeI.value.trim()? num(monthlyFeeI.value) : paid/months;
+      var spm = spmI.value.trim()? num(spmI.value) : total/months;
+      if(spm<=0)spm=total;
+      showAuto(paid/months, total/months);
+
+      if(completed<=0){
+        refund=paid;
+        krRows=[["교습 기간","1개월 초과"],["상태","시작 전"],["납부 금액",fmt(paid)+"원"],["적용 기준","RULE:교습 시작 전 → 전액 환불"]];
+        frRows=[["Durée du cours","Plus d'1 mois"],["État","Avant le début"],["Montant payé",fmt(paid)+" ₩"],["Règle appliquée","RULE:Avant le début → remboursement intégral"]];
+      } else {
+        var fullMonths=Math.floor(completed/spm);
+        var intoCurrent=completed-fullMonths*spm;
+        var mProg=spm>0?intoCurrent/spm:0;
+        var curMonth=fullMonths+1;
+        var cur=ruleA(mf,intoCurrent,mProg);
+        var remaining=Math.max(0,months-curMonth);
+        var remRefund=remaining*mf;
+        refund=cur.amount+remRefund;
+
+        krRows=[
+          ["교습 기간","1개월 초과 ("+months+"개월)"],
+          ["월 교습비 / 월 횟수", fmt(mf)+"원 / "+Math.round(spm)+"회"],
+          ["진행 상황", curMonth+"개월 차 진행 중 (해당 월 "+intoCurrent+"/"+Math.round(spm)+"회, "+pct(mProg)+"%)"],
+          ["① 해당 월 반환액", "PLUS:"+fmt(r10(cur.amount))+"원"],
+          ["② 잔여 "+remaining+"개월 전액", "PLUS:"+fmt(r10(remRefund))+"원"],
+          ["적용 기준 (해당 월)", "RULE:"+cur.kr]
+        ];
+        frRows=[
+          ["Durée du cours","Plus d'1 mois ("+months+" mois)"],
+          ["Tarif mensuel / séances", fmt(mf)+" ₩ / "+Math.round(spm)],
+          ["Avancement", "Mois "+curMonth+" en cours ("+intoCurrent+"/"+Math.round(spm)+" séances, "+pct(mProg)+" %)"],
+          ["① Mois en cours", "PLUS:"+fmt(r10(cur.amount))+" ₩"],
+          ["② "+remaining+" mois restants (intégral)", "PLUS:"+fmt(r10(remRefund))+" ₩"],
+          ["Règle (mois en cours)", "RULE:"+cur.fr]
+        ];
+      }
+    }
+    render("student", r10(refund), paid, krRows, frRows, false);
+  }
+
+  /* ── retour visuel des valeurs auto-calculées ──
+     les champs restent vides (donc surchargeables), mais le placeholder
+     et l'indication affichent la valeur réellement appliquée */
+  function showAuto(autoFee, autoSpm){
+    var feeOn = !monthlyFeeI.value.trim();
+    var spmOn = !spmI.value.trim();
+
+    if(feeOn && isFinite(autoFee) && autoFee>0){
+      monthlyFeeI.placeholder = fmt(autoFee)+" (자동)";
+      hintFee.innerHTML = '자동 적용: <b>'+fmt(autoFee)+'원</b> (납부액÷개월수). 첫 달 할인 시 직접 입력하세요.';
+      hintFee.classList.add("auto"); hintFee.classList.remove("manual");
+    } else {
+      monthlyFeeI.placeholder = "자동 계산";
+      hintFee.innerHTML = feeOn
+        ? '비워두면 납부액÷개월수로 자동 계산. 첫 달 할인 시 직접 입력하세요.'
+        : '직접 입력한 값이 적용됩니다. 비우면 자동 계산으로 돌아갑니다.';
+      hintFee.classList.remove("auto");
+      hintFee.classList.toggle("manual", !feeOn);
+    }
+
+    if(spmOn && isFinite(autoSpm) && autoSpm>0){
+      spmI.placeholder = Math.round(autoSpm)+"회 (자동)";
+      hintSpm.innerHTML = '자동 적용: <b>'+Math.round(autoSpm)+'회/월</b> (총 횟수÷개월수).';
+      hintSpm.classList.add("auto"); hintSpm.classList.remove("manual");
+    } else {
+      spmI.placeholder = "자동 계산";
+      hintSpm.innerHTML = spmOn
+        ? '비워두면 총 횟수÷개월수로 자동 계산.'
+        : '직접 입력한 값이 적용됩니다. 비우면 자동 계산으로 돌아갑니다.';
+      hintSpm.classList.remove("auto");
+      hintSpm.classList.toggle("manual", !spmOn);
+    }
+  }
+
+  function computeTeacher(paid,months){
+    if(!startI.value||!endI.value||!stopI.value){
+      return placeholder("교습 시작일·종료 예정일·교습 불가일을 입력하세요.","Renseignez les trois dates.");
+    }
+    var totalDays=days(startI.value,endI.value);
+    var elapsedDays=days(startI.value,stopI.value);
+    if(totalDays<=0){return placeholder("종료 예정일이 시작일보다 뒤여야 합니다.","La date de fin doit suivre le début.");}
+    if(elapsedDays<0)elapsedDays=0;
+    if(elapsedDays>totalDays)elapsedDays=totalDays;
+
+    var dailyRate=paid/totalDays;
+    var consumed=Math.min(paid,dailyRate*elapsedDays);
+    var refund=paid-consumed;
+
+    var krRows=[
+      ["납부 금액", fmt(paid)+"원"],
+      ["총 교습일수", totalDays+"일"],
+      ["경과 일수 (전날까지)", elapsedDays+"일"],
+      ["일할 금액", fmt(dailyRate)+"원/일"],
+      ["차감액 (일할 × 경과)", "MINUS:"+fmt(r10(consumed))+"원"],
+      ["적용 기준","RULE:교습자 사유 → 일할계산 차감"]
+    ];
+    var frRows=[
+      ["Montant payé", fmt(paid)+" ₩"],
+      ["Jours totaux", totalDays+" jours"],
+      ["Jours écoulés (veille incl.)", elapsedDays+" jours"],
+      ["Tarif journalier", fmt(dailyRate)+" ₩/jour"],
+      ["Déduction (journalier × écoulé)", "MINUS:"+fmt(r10(consumed))+" ₩"],
+      ["Règle appliquée","RULE:Cause professeur → prorata journalier"]
+    ];
+    render("teacher", r10(refund), paid, krRows, frRows, false);
+  }
+
+  function placeholder(kr,fr){
+    state.last=null;
+    resultDiv.innerHTML='<div class="placeholder">'+kr+'<br><span>'+fr+'</span></div>';
+  }
+
+  /* ── rendu écran ── */
+  function render(who, refund, paid, krRows, frRows, isGuarantee){
+    var name=$("studentName").value.trim();
+    var date=$("docDate").value||iso;
+    var ratio=paid>0?refund/paid:0;
+    var whoKr=who==="teacher"?"교습자 사유 (교습 불가)":"학습자 사유 (변심)";
+    var whoFr=who==="teacher"?"Cause professeur":"Cause élève (changement d'avis)";
+    var courseKr=courseSel.options[courseSel.selectedIndex].text;
+
+    /* mémorisé pour le PDF */
+    state.last={who:who,refund:refund,paid:paid,ratio:ratio,krRows:krRows,frRows:frRows,
+                name:name,date:date,whoKr:whoKr,whoFr:whoFr,course:courseKr,guarantee:!!isGuarantee};
+
+    function rows(arr){
+      return arr.map(function(r){
+        var v=r[1], cls="";
+        if(/^MINUS:/.test(v)){cls=" minus";v=v.slice(6);}
+        else if(/^PLUS:/.test(v)){cls=" plus";v=v.slice(5);}
+        else if(/^RULE:/.test(v)){
+          return '<div class="drow"><span class="l">'+esc(r[0])+'</span><span class="v"><span class="rule-tag'+(isGuarantee?' warn':'')+'">'+esc(v.slice(5))+'</span></span></div>';
+        }
+        return '<div class="drow'+cls+'"><span class="l">'+esc(r[0])+'</span><span class="v">'+esc(v)+'</span></div>';
+      }).join("");
+    }
+
+    var html='';
+    html+='<div class="price-card">';
+    html+='<div class="pl">최종 환불액 / Montant à rembourser</div>';
+    html+='<div class="pv">'+fmt(refund)+' <span>원</span></div>';
+    html+='<div class="pm">납부액 '+fmt(paid)+'원 중 '+pct(ratio)+'% · soit '+pct(ratio)+' % du montant payé</div>';
+    html+='<div class="tag">'+esc(isGuarantee?"첫 수업 만족 보장 적용":whoKr)+'</div>';
+    html+='</div>';
+
+    html+='<div class="detail"><div class="detail-head"><span class="flag">🇰🇷</span>환불 상세 내역</div><div class="detail-body">';
+    html+=(name?'<div class="drow"><span class="l">학생</span><span class="v">'+esc(name)+'</span></div>':'');
+    html+='<div class="drow"><span class="l">강좌</span><span class="v">'+esc(courseKr)+'</span></div>';
+    html+='<div class="drow"><span class="l">작성일</span><span class="v">'+esc(date)+'</span></div>';
+    html+='<div class="drow"><span class="l">환불 사유</span><span class="v">'+esc(whoKr)+'</span></div>';
+    html+=rows(krRows);
+    html+='<div class="drow total"><span class="l">최종 환불액</span><span class="v">'+fmt(refund)+'원</span></div>';
+    html+='</div></div>';
+
+    html+='<div class="detail"><div class="detail-head"><span class="flag">🇫🇷</span>Détail du remboursement</div><div class="detail-body">';
+    html+=(name?'<div class="drow"><span class="l">Élève</span><span class="v">'+esc(name)+'</span></div>':'');
+    html+='<div class="drow"><span class="l">Date</span><span class="v">'+esc(date)+'</span></div>';
+    html+='<div class="drow"><span class="l">Motif</span><span class="v">'+esc(whoFr)+'</span></div>';
+    html+=rows(frRows);
+    html+='<div class="drow total"><span class="l">Montant remboursé</span><span class="v">'+fmt(refund)+' ₩</span></div>';
+    html+='</div></div>';
+
+    html+='<div class="info-box">※ 원격교습: 환불액은 실제 수강한 부분(완료 회차)에 해당하는 금액을 제외하고 산정됩니다.<br>※ Cours à distance : le montant déjà consommé (séances effectuées) est déduit.</div>';
+    html+='<div class="legal"><b>법적 근거:</b> 학원의 설립·운영 및 과외교습에 관한 법률 시행령 별표 4 (교습비등 반환 기준). 본 계산기는 참고용 산정 도구이며, 최종 환불액은 개별 계약 조건에 따라 조정될 수 있습니다.<br><b>Base :</b> barème de remboursement du décret d\'application de la loi coréenne sur les académies. Outil d\'estimation — le montant final peut varier selon le contrat.</div>';
+
+    var buttons='<button class="btn btn-pdf" id="btn-pdf" type="button">📄 PDF 다운로드 · Télécharger le PDF</button>'+
+                '<button class="btn btn-print" id="btn-print" type="button">🖨 인쇄 · Imprimer</button>';
+
+    resultDiv.innerHTML='<div id="printable">'+html+'</div>'+buttons;
+    $("btn-pdf").addEventListener("click",generatePDF);
+    $("btn-print").addEventListener("click",openPrintWindow);
+  }
+
+  /* ══════════════════════════════════════════════
+     PDF — reconstruction à plat (aucun dégradé,
+     aucun background-clip, aucune variable CSS :
+     html2canvas ne sait pas les rasteriser)
+     ══════════════════════════════════════════════ */
+  var C={indigo:"#4F46E5", magenta:"#DB2777", ink:"#1E1B4B", inkSoft:"#3F3A6E",
+         muted:"#7B7A97", line:"#E9E7F5", lav:"#EEF0FE", pink:"#FDF2F8"};
+
+  /* zip KR/FR : les deux tableaux sont parallèles (même longueur, même ordre) */
+  function pdfDetailRows(krRows,frRows,isG){
+    return krRows.map(function(r,i){
+      var fr = frRows[i] || ["",""];
+      var v=r[1], color=C.ink, isRule=false;
+      if(/^MINUS:/.test(v)){color=C.magenta;v=v.slice(6);}
+      else if(/^PLUS:/.test(v)){color=C.indigo;v=v.slice(5);}
+      else if(/^RULE:/.test(v)){v=v.slice(5);isRule=true;}
+
+      var frV=fr[1]||"";
+      frV=frV.replace(/^(MINUS:|PLUS:|RULE:)/,"");
+
+      var cell;
+      if(isRule){
+        cell='<span style="display:inline-block;background:'+(isG?C.pink:C.lav)+';color:'+(isG?C.magenta:C.indigo)+
+             ';font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;line-height:1.35;">'+esc(v)+'</span>'+
+             '<div style="font-size:9px;color:'+C.muted+';margin-top:3px;line-height:1.4;font-weight:500;">'+esc(frV)+'</div>';
+      } else {
+        cell='<span style="color:'+color+';font-weight:700;font-size:12px;">'+esc(v)+'</span>';
+      }
+      return '<tr>'+
+        '<td style="padding:7px 0;border-bottom:1px solid '+C.line+';vertical-align:top;">'+
+          '<div style="font-size:11.5px;font-weight:600;color:'+C.inkSoft+';line-height:1.35;">'+esc(r[0])+'</div>'+
+          '<div style="font-size:9px;color:'+C.muted+';font-weight:500;line-height:1.35;margin-top:1px;">'+esc(fr[0]||"")+'</div>'+
+        '</td>'+
+        '<td style="padding:7px 0 7px 12px;border-bottom:1px solid '+C.line+';text-align:right;vertical-align:top;">'+cell+'</td>'+
+      '</tr>';
+    }).join("");
+  }
+
+  function pdfMetaRows(pairs){
+    return pairs.filter(function(p){return p[2];}).map(function(p){
+      return '<tr>'+
+        '<td style="padding:5px 0;border-bottom:1px solid '+C.line+';vertical-align:top;width:42%;">'+
+          '<div style="font-size:11.5px;font-weight:600;color:'+C.inkSoft+';line-height:1.35;">'+esc(p[0])+'</div>'+
+          '<div style="font-size:9px;color:'+C.muted+';font-weight:500;line-height:1.35;">'+esc(p[1])+'</div>'+
+        '</td>'+
+        '<td style="padding:5px 0 5px 12px;border-bottom:1px solid '+C.line+';text-align:right;font-size:12px;font-weight:700;color:'+C.ink+';vertical-align:top;">'+esc(p[2])+'</td>'+
+      '</tr>';
+    }).join("");
+  }
+
+  function buildPdfMarkup(d){
+    var h='';
+
+    /* ── en-tête : filet fin, pas de gros bloc ── */
+    h+='<table style="width:100%;border-collapse:collapse;margin-bottom:14px;"><tr>'+
+       '<td style="vertical-align:bottom;">'+
+         '<div style="font-size:21px;font-weight:800;color:'+C.indigo+';letter-spacing:-.7px;line-height:1;">callmeparis.</div>'+
+         '<div style="font-size:9px;color:'+C.muted+';margin-top:3px;font-weight:500;">미리내프랑스 · 사업자등록번호 170-09-01295</div>'+
+       '</td>'+
+       '<td style="vertical-align:bottom;text-align:right;">'+
+         '<div style="font-size:13.5px;font-weight:800;color:'+C.ink+';letter-spacing:-.3px;">수강료 환불 명세서</div>'+
+         '<div style="font-size:9.5px;color:'+C.muted+';font-weight:500;margin-top:2px;">Justificatif de remboursement</div>'+
+       '</td>'+
+       '</tr></table>'+
+       '<div style="height:2px;background:'+C.indigo+';margin-bottom:14px;"></div>';
+
+    /* ── bandeau montant : compact, sur une ligne ── */
+    h+='<table style="width:100%;border-collapse:collapse;background:'+C.indigo+';border-radius:10px;margin-bottom:14px;"><tr>'+
+       '<td style="padding:13px 16px;color:#fff;vertical-align:middle;">'+
+         '<div style="font-size:10px;font-weight:600;opacity:.9;">최종 환불액 · Montant à rembourser</div>'+
+         '<div style="font-size:10px;font-weight:500;opacity:.85;margin-top:3px;">납부액 '+fmt(d.paid)+'원 중 '+pct(d.ratio)+'% du montant payé</div>'+
+       '</td>'+
+       '<td style="padding:13px 16px;color:#fff;text-align:right;vertical-align:middle;white-space:nowrap;">'+
+         '<div style="font-size:24px;font-weight:800;letter-spacing:-.8px;line-height:1.1;">'+fmt(d.refund)+' 원</div>'+
+         '<div style="display:inline-block;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:20px;font-size:9.5px;font-weight:700;margin-top:5px;">'+esc(d.guarantee?"첫 수업 만족 보장 적용":d.whoKr)+'</div>'+
+       '</td>'+
+       '</tr></table>';
+
+    /* ── informations ── */
+    h+='<div style="font-size:10px;font-weight:800;color:'+C.muted+';letter-spacing:.3px;margin-bottom:5px;">기본 정보 · INFORMATIONS</div>';
+    h+='<table style="width:100%;border-collapse:collapse;margin-bottom:14px;">'+
+       pdfMetaRows([
+         ["학생","Élève",d.name],
+         ["강좌","Cours",d.course],
+         ["작성일","Date",d.date],
+         ["환불 사유","Motif",d.whoKr+" · "+d.whoFr]
+       ])+'</table>';
+
+    /* ── détail bilingue, une seule table ── */
+    h+='<div style="font-size:10px;font-weight:800;color:'+C.muted+';letter-spacing:.3px;margin-bottom:5px;">산정 내역 · DÉTAIL DU CALCUL</div>';
+    h+='<table style="width:100%;border-collapse:collapse;">'+pdfDetailRows(d.krRows,d.frRows,d.guarantee)+'</table>';
+
+    /* ── total ── */
+    h+='<table style="width:100%;border-collapse:collapse;margin-top:8px;border-top:1.5px solid '+C.indigo+';"><tr>'+
+       '<td style="padding:9px 0 0;vertical-align:middle;">'+
+         '<div style="font-size:11.0px;font-weight:800;color:'+C.ink+';">최종 환불액</div>'+
+         '<div style="font-size:9px;color:'+C.muted+';font-weight:500;">Montant remboursé</div>'+
+       '</td>'+
+       '<td style="padding:9px 0 0;text-align:right;font-size:17px;font-weight:800;color:'+C.magenta+';letter-spacing:-.5px;vertical-align:middle;">'+fmt(d.refund)+' 원</td>'+
+       '</tr></table>';
+
+    /* ── délai de remboursement ── */
+    h+='<table style="width:100%;border-collapse:collapse;background:'+C.lav+';border-radius:8px;margin-top:16px;"><tr>'+
+       '<td style="padding:11px 13px;vertical-align:middle;width:1%;white-space:nowrap;">'+
+         '<span style="display:inline-block;background:'+C.indigo+';color:#fff;font-size:11px;font-weight:800;padding:5px 11px;border-radius:20px;">5영업일 이내</span>'+
+       '</td>'+
+       '<td style="padding:11px 13px 11px 4px;vertical-align:middle;font-size:9.5px;color:'+C.inkSoft+';line-height:1.55;font-weight:500;">'+
+         '환불 금액은 본 명세서 확정일로부터 <b style="color:'+C.ink+';">5영업일 이내</b>에 학습자가 지정한 계좌로 입금됩니다.<br>'+
+         'Le remboursement est versé sur le compte indiqué par l\'élève <b style="color:'+C.ink+';">sous 5 jours ouvrés</b> à compter de la validation du présent justificatif.'+
+       '</td>'+
+       '</tr></table>';
+
+    /* ── note ── */
+    h+='<div style="background:#FFFFFF;border:1px solid '+C.line+';border-radius:8px;padding:9px 12px;font-size:9.5px;color:'+C.inkSoft+';line-height:1.55;font-weight:500;margin-top:10px;">'+
+       '※ 원격교습: 환불액은 실제 수강한 부분(완료 회차)에 해당하는 금액을 제외하고 산정됩니다.<br>'+
+       '※ Cours à distance : le montant déjà consommé (séances effectuées) est déduit.</div>';
+
+    /* ── mentions légales ── */
+    h+='<div style="font-size:8.5px;color:'+C.muted+';line-height:1.6;font-weight:500;margin-top:16px;border-top:1px solid '+C.line+';padding-top:9px;">';
+    h+='<b style="color:'+C.inkSoft+';">법적 근거:</b> 학원의 설립·운영 및 과외교습에 관한 법률 시행령 별표 4 (교습비등 반환 기준). 본 명세서는 참고용 산정 자료이며, 최종 환불액은 개별 계약 조건에 따라 조정될 수 있습니다.<br>';
+    h+='<b style="color:'+C.inkSoft+';">Base :</b> barème de remboursement du décret d\'application de la loi coréenne sur les académies. Document d\'estimation — le montant final peut varier selon le contrat.</div>';
+
+    return h;
+  }
+
+  /* — conteneur dans le flux, coordonnées positives, masqué via z-index :
+       c'est ce point précis qui faisait échouer la capture
+       (l'ancien position:fixed;left:-9999px) — */
+  function makeHolder(html){
+    var holder=document.createElement("div");
+    holder.setAttribute("id","pdf-holder");
+    holder.style.cssText=
+      "position:absolute;left:0;top:0;z-index:-9999;"+
+      "width:660px;background:#ffffff;padding:0;"+
+      "font-family:'Pretendard',sans-serif;color:"+C.ink+";"+
+      "box-sizing:border-box;";
+    holder.innerHTML=html;
+    document.body.appendChild(holder);
+    return holder;
+  }
+
+  function canvasIsBlank(cv){
+    try{
+      var ctx=cv.getContext("2d");
+      var w=cv.width,hgt=cv.height;
+      if(!w||!hgt)return true;
+      var pts=[[w*.5,hgt*.12],[w*.5,hgt*.2],[w*.3,hgt*.45],[w*.7,hgt*.6],[w*.5,hgt*.8]];
+      for(var i=0;i<pts.length;i++){
+        var p=ctx.getImageData(Math.floor(pts[i][0]),Math.floor(pts[i][1]),1,1).data;
+        if(p[0]<245||p[1]<245||p[2]<245)return false;
+      }
+      return true;
+    }catch(e){return false;}
+  }
+
+  function generatePDF(){
+    var d=state.last;
+    if(!d)return;
+    var btn=$("btn-pdf");
+    var label=btn.textContent;
+    btn.disabled=true; btn.textContent="PDF 생성 중… / Génération…";
+
+    var done=function(ok){
+      btn.disabled=false; btn.textContent=label;
+      if(!ok){ toast("PDF 생성에 실패했습니다. 인쇄 창으로 대체합니다."); openPrintWindow(); }
+    };
+
+    var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+    fontsReady.then(function(){
+      if(typeof html2canvas==="undefined"){ return done(false); }
+      var jsPDFCtor=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+      if(!jsPDFCtor){ return done(false); }
+
+      var holder=makeHolder(buildPdfMarkup(d));
+      var prevScroll=window.scrollY;
+      window.scrollTo(0,0);
+
+      /* laisser un tick au navigateur pour la mise en page */
+      setTimeout(function(){
+        html2canvas(holder,{
+          scale:2,
+          backgroundColor:"#ffffff",
+          useCORS:true,
+          logging:false,
+          scrollX:0,
+          scrollY:0,
+          width:holder.offsetWidth,
+          height:holder.offsetHeight,
+          windowWidth:holder.offsetWidth
+        }).then(function(canvas){
+          holder.remove();
+          window.scrollTo(0,prevScroll);
+
+          if(canvasIsBlank(canvas)){ return done(false); }
+
+          var pdf=new jsPDFCtor({unit:"mm",format:"a4",orientation:"portrait"});
+          var pw=pdf.internal.pageSize.getWidth();
+          var ph=pdf.internal.pageSize.getHeight();
+          var m=18;
+          var iw=pw-m*2;
+          var imgH=canvas.height*iw/canvas.width;   // hauteur totale en mm
+          var usableH=ph-m*2;
+
+          if(imgH<=usableH){
+            pdf.addImage(canvas.toDataURL("image/jpeg",0.95),"JPEG",m,m,iw,imgH);
+          } else {
+            /* découpe réelle du canvas page par page : pas de débord dans les marges */
+            var sliceH=Math.floor(usableH*canvas.width/iw);   // hauteur de page en px source
+            var offset=0, page=0;
+            while(offset<canvas.height && page<25){
+              var hPx=Math.min(sliceH,canvas.height-offset);
+              var slice=document.createElement("canvas");
+              slice.width=canvas.width; slice.height=hPx;
+              var sctx=slice.getContext("2d");
+              sctx.fillStyle="#ffffff"; sctx.fillRect(0,0,slice.width,slice.height);
+              sctx.drawImage(canvas,0,offset,canvas.width,hPx,0,0,canvas.width,hPx);
+              if(page>0)pdf.addPage();
+              pdf.addImage(slice.toDataURL("image/jpeg",0.95),"JPEG",m,m,iw,hPx*iw/canvas.width);
+              offset+=hPx; page++;
+            }
+          }
+
+          var nm=d.name?("_"+d.name.replace(/[^\w가-힣-]/g,"")):"";
+          pdf.save("callmeparis_remboursement"+nm+"_"+d.date+".pdf");
+          done(true);
+        }).catch(function(){
+          try{holder.remove();}catch(e){}
+          window.scrollTo(0,prevScroll);
+          done(false);
+        });
+      },80);
+    }).catch(function(){done(false);});
+  }
+
+  /* ── repli 100 % fiable : fenêtre d'impression (texte vectoriel) ── */
+  function openPrintWindow(){
+    var d=state.last;
+    if(!d)return;
+    var w=window.open("","_blank");
+    if(!w){ toast("팝업이 차단되었습니다. 브라우저 설정을 확인해 주세요."); return; }
+    w.document.write(
+      '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'+
+      '<title>callmeparis_remboursement_'+d.date+'</title>'+
+      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">'+
+      '<style>@page{size:A4;margin:18mm;}body{font-family:"Pretendard",sans-serif;margin:0;color:'+C.ink+';-webkit-print-color-adjust:exact;print-color-adjust:exact;}</style>'+
+      '</head><body>'+buildPdfMarkup(d)+'</body></html>'
+    );
+    w.document.close();
+    w.focus();
+    setTimeout(function(){ w.print(); },700);
+  }
+
+  toggleFields();
+  placeholder("환불 요청 주체를 먼저 선택하세요.","Sélectionnez d'abord le demandeur.");
+
+});
+</script>
+</body>
+</html>
